@@ -216,8 +216,8 @@ foreach($protocolli_fetch as $row) {
                 UPDATE " . $conf_query_documenti::$schema . ".Documenti 
                 SET pathDocumento = ?,
                     nomeFile = ?, 
-                    location = 'S3'
-                    modified = NOW()
+                    location = 'S3',
+                    modified = NOW(),
                     userId = 'MIGRAZIONE9'
                 WHERE idDocumento = ?";
 
