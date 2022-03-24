@@ -5,7 +5,7 @@ $st = time();
 set_time_limit(540);
 
 require('vendor/autoload.php');
-require('./configStaging.php');
+require('./config.php');
 require('./functions.php');
 
 $from = $conf_query_protocolli::$from;
