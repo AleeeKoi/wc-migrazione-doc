@@ -1,0 +1,17 @@
+{
+  "name": "ec2-user/widecare-doc-migration",
+  "autoload": {
+      "psr-4": {
+          "Ec2User\\WidecareDocMigration\\": "src/"
+      }
+  },
+  "authors": [
+      {
+          "name": "Heveloon"
+      }
+  ],
+  "require": {
+      "aws/aws-sdk-php": "^3.215",
+      "robgridley/flysystem-smb": "^1.0"
+  }
+}
