@@ -183,7 +183,6 @@ foreach($protocolli_fetch as $row) {
 
         $path_doc_dirs = [
             $conf_dir_destination::$root,
-            'Documenti',
             'Persona',
             $doc['codiceFiscale'],
             'Pratiche',
