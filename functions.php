@@ -54,13 +54,12 @@ function echo_exception(\Throwable $ex) {
 }
 
 function compila_riga_csv_KO($error) {
-    global $csv_ko_content, $row;
+    global $csv_ko_content, $protocollo_orig;
     $csv_ko_content .= PHP_EOL .
-    '"' . $row['idprotocollo'] . '";' .
-    '"' . $row['codmittente'] . '";' .
-    '"' . $row['NumeroProtocollo'] . '";' .
-    '"' . $row['DataDocumento'] . '";' .
-    '"' . $row['codicerichiestarimborso'] . '";' .
-    '"' . $row['codfattura'] . '";' .
+    '"' . $protocollo_orig['IdProtocollo'] . '";' .
+    '"' . $protocollo_orig['NumeroProtocollo'] . '";' .
+    '"' . $protocollo_orig['DataDocumento'] . '";' .
+    '"' . $protocollo_orig['CodiceRichiestaRimborso'] . '";' .
+    '"' . $protocollo_orig['CodOggetto'] . '";' .
     '"' . $error . '"';
 }
