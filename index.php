@@ -111,7 +111,7 @@ $pratiche_pdo = $pdo->query("
 
 echo PHP_EOL . 'record estratti staging pratiche: ' . $pratiche_pdo->rowCount();
 
-$pratiche_pdo_rows = $stmt->fetchAll();
+$pratiche_pdo_rows = $pratiche_pdo->fetchAll();
 
 foreach($protocolli_fetch as $protocollo_orig) {
 
