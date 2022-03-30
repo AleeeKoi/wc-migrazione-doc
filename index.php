@@ -123,6 +123,7 @@ $pratiche_pdo_rows = $pratiche_pdo->fetchAll();
 foreach($protocolli_fetch as $protocollo_orig) {
 
     $trovato = false;
+    $errore = null;
 
     echo PHP_EOL . PHP_EOL . '--  IdProtocollo:' . $protocollo_orig['IdProtocollo'] . ' -- CodiceRichiestaRimborso ' . $protocollo_orig['CodiceRichiestaRimborso'];
 
@@ -142,6 +143,7 @@ foreach($protocolli_fetch as $protocollo_orig) {
             if ($verbose) {
                 echo PHP_EOL . '----  ERROR: codice fiscale inesistente per protocollo ' . $pratica_dest['numeroProtocollo'];
             }
+            $errore = 'codice fiscale inesistente';
             compila_riga_csv_KO("codice fiscale inesistente");
             break;
         }
@@ -150,6 +152,7 @@ foreach($protocolli_fetch as $protocollo_orig) {
             if ($verbose) {
                 echo PHP_EOL . '----  ERROR: numero protocollo inesistente per protocollo ' . $pratica_dest['numeroProtocollo'];
             }
+            $errore = 'numero protocollo inesistente';
             compila_riga_csv_KO("numero protocollo inesistente");
             break;
         }
@@ -163,6 +166,7 @@ foreach($protocolli_fetch as $protocollo_orig) {
             if ($verbose) {
                 echo PHP_EOL . '----  ERROR: formato data errato ' . $protocollo_orig['DataDocumento'];
             }
+            $errore = 'formato data errato';
             compila_riga_csv_KO('formato data errato ' . $protocollo_orig['DataDocumento']);
             break;
         }
@@ -178,6 +182,7 @@ foreach($protocolli_fetch as $protocollo_orig) {
             if ($verbose) {
                 echo PHP_EOL . '----  ERROR: file in samba non presente: ' . $path_doc_origin;
             }
+            $errore = 'file in samba non presente ' . $path_doc_origin;
             compila_riga_csv_KO('file in samba non presente: ' . $path_doc_origin);
             break;
         }
@@ -186,6 +191,7 @@ foreach($protocolli_fetch as $protocollo_orig) {
             $read_file = $samba->read($path_doc_origin);
         } catch (\Throwable $ex) {
             echo_exception($ex);
+            $errore = $ex->getMessage();
             compila_riga_csv_KO('EXCEPTION: ' . $ex->getMessage());
             break;
         }
@@ -249,6 +255,7 @@ foreach($protocolli_fetch as $protocollo_orig) {
         } catch (\Throwable $ex) {
             echo_exception($ex);
             sns_publish($conf_sns, $ex->getMessage());
+            $errore = $ex->getMessage();
             compila_riga_csv_KO('EXCEPTION: ' . $ex->getMessage());
         }
     }
@@ -256,14 +263,15 @@ foreach($protocolli_fetch as $protocollo_orig) {
     if (!$trovato) {
         echo PHP_EOL . '----  ERROR: Record in Pratiche non trovato ' . $protocollo_orig['CodiceRichiestaRimborso'];
         compila_riga_csv_KO("Record in Pratiche non trovato");
+        $errore = 'Record in Pratiche non trovato';
     }
 
     $update_protocollo = "
         UPDATE " . $conf_query_protocolli::$schema . ".protocolli 
-        SET Importato = 1
+        SET Importato = 1, ImportazioneErrore = ?
         WHERE IdProtocollo = ?";
 
-    $pdo->prepare($update_protocollo)->execute([$protocollo_orig['IdProtocollo']]);
+    $pdo->prepare($update_protocollo)->execute([$errore, $protocollo_orig['IdProtocollo']]);
 }
 
 if ($faschim_protocolli_pdo->rowCount()) {
