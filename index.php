@@ -68,12 +68,12 @@ $faschim_protocolli_pdo = $pdo->query("
         CodOggetto
     from " . $conf_query_protocolli::$schema . ".protocolli
     join " . $conf_query_protocolli::$schema . ".protocollirichieste on protocolli.IdProtocollo = protocollirichieste.CodiceProtocollo
-    join " . $conf_query_protocolli::$schema . ".oggetti on protocolli.CodOggetto = oggetti.IdOggetto
+    -- join " . $conf_query_protocolli::$schema . ".oggetti on protocolli.CodOggetto = oggetti.IdOggetto
     join " . $conf_query_protocolli::$schema . ".richiesterimborso on protocollirichieste.CodiceRichiestaRimborso = richiesterimborso.IdRichiestaRimborso
-    where CodFattura is not null
+    where Importato = 0
       and dataDocumento >= '" . $from . "'
       and dataDocumento <= '" . $to . "'
-      and Importato = 0
+      and CodOggetto is not null
     order by dataDocumento DESC
     limit " . $limit
 );
