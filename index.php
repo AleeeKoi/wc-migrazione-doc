@@ -237,13 +237,6 @@ foreach($protocolli_fetch as $protocollo_orig) {
                 $file_name
             ]);
 
-            $update_protocollo = "
-                UPDATE " . $conf_query_protocolli::$schema . ".protocolli 
-                SET Importato = 1
-                WHERE IdProtocollo = ?";
-
-            $pdo->prepare($update_protocollo)->execute([$protocollo_orig['IdProtocollo']]);
-
             // compilo il csv ok
 
             $csv_ok_content .= PHP_EOL .
@@ -265,6 +258,13 @@ foreach($protocolli_fetch as $protocollo_orig) {
         echo PHP_EOL . '----  ERROR: Record in Pratiche non trovato ' . $protocollo_orig['CodiceRichiestaRimborso'];
         compila_riga_csv_KO("Record in Pratiche non trovato");
     }
+
+    $update_protocollo = "
+        UPDATE " . $conf_query_protocolli::$schema . ".protocolli 
+        SET Importato = 1
+        WHERE IdProtocollo = ?";
+
+    $pdo->prepare($update_protocollo)->execute([$protocollo_orig['IdProtocollo']]);
 }
 
 if ($faschim_protocolli_pdo->rowCount()) {
