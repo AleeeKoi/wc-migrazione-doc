@@ -103,7 +103,6 @@ $array_richieste_rimborsi = array_column($protocolli_fetch, 'CodiceRichiestaRimb
 
 if (count($array_richieste_rimborsi) === 0) {
     sns_publish($conf_sns, 'INFO: array_richieste_rimborsi vuoto (finito? Samuel stacca il cron...)');
-    fclose($fp);
     exit('INFO: array_richieste_rimborsi vuoto (finito?)');
 }
 
