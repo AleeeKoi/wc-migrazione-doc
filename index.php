@@ -69,7 +69,7 @@ $faschim_protocolli_pdo = $pdo->query("
     from " . $conf_query_protocolli::$schema . ".protocolli
     join " . $conf_query_protocolli::$schema . ".protocollirichieste on protocolli.IdProtocollo = protocollirichieste.CodiceProtocollo
     join " . $conf_query_protocolli::$schema . ".oggetti on protocolli.CodOggetto = oggetti.IdOggetto
-    join " . $conf_query_protocolli::$schema . ".richiesterimborso on protocollirichieste.CodiceRichiestaRimborso = richiesterimborso.IdRichiestaRimborsowhere
+    join " . $conf_query_protocolli::$schema . ".richiesterimborso on protocollirichieste.CodiceRichiestaRimborso = richiesterimborso.IdRichiestaRimborso
     where CodFattura is not null
       and dataDocumento >= '" . $from . "'
       and dataDocumento <= '" . $to . "'
