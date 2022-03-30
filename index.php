@@ -2,7 +2,7 @@
 
 $st = time();
 
-set_time_limit(540);
+set_time_limit(0);
 
 require('vendor/autoload.php');
 require('./config.php');
