@@ -111,20 +111,21 @@ $pratiche_pdo = $pdo->query("
 
 echo PHP_EOL . 'record estratti staging pratiche: ' . $pratiche_pdo->rowCount();
 
+$pratiche_pdo_rows = $stmt->fetchAll();
+
 foreach($protocolli_fetch as $protocollo_orig) {
 
     $trovato = false;
 
     echo PHP_EOL . PHP_EOL . '--  IdProtocollo:' . $protocollo_orig['IdProtocollo'] . ' -- CodiceRichiestaRimborso ' . $protocollo_orig['CodiceRichiestaRimborso'];
 
-    foreach ($pratiche_pdo as $pratica_dest) {
+    foreach ($pratiche_pdo_rows as $pratica_dest) {
 
         if ($trovato) {
             break;
         }
 
         if (intval($pratica_dest['numeroProtocollo']) !== intval($protocollo_orig['CodiceRichiestaRimborso'])) {
-            echo PHP_EOL . '---- MISS ' . intval($pratica_dest['numeroProtocollo']) . ' != ' . intval($protocollo_orig['CodiceRichiestaRimborso']);
             continue; // vado al ciclo successivo
         }
 
