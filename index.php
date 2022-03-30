@@ -106,7 +106,7 @@ $pratiche_pdo = $pdo->query("
         Persona.codiceFiscale
     from " . $conf_query_documenti::$schema . ".Pratica
     join " . $conf_query_documenti::$schema . ".Persona on Persona.idPersona = Pratica.idPersonaSocio
-    where Pratica.numeroProtocollo in (" . implode(',', $array_richieste_rimborsi) . ")
+    where Pratica.numeroProtocollo in ('" . implode("','", $array_richieste_rimborsi) . "')
 ");
 
 echo PHP_EOL . 'record estratti staging pratiche: ' . $pratiche_pdo->rowCount();
