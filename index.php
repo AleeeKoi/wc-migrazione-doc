@@ -119,7 +119,7 @@ foreach($protocolli_fetch as $protocollo_orig) {
 
     foreach ($pratiche_pdo as $pratica_dest) {
 
-        if ($pratica_dest['numeroProtocollo'] != $protocollo_orig['CodiceRichiestaRimborso']) {
+        if ((string) $pratica_dest['numeroProtocollo'] !== (string) $protocollo_orig['CodiceRichiestaRimborso']) {
             continue; // vado al ciclo successivo
         }
 
