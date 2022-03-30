@@ -92,10 +92,11 @@ $csv_ko_path = 'DocumentiTestImport/csv/ko_' . $time . '_' . $from . '_' . $to .
 
 $protocolli_fetch = $faschim_protocolli_pdo->fetchAll();
 $array_id_protocolli = array_column($protocolli_fetch, 'IdProtocollo');
+$array_richieste_rimborsi = array_column($protocolli_fetch, 'CodiceRichiestaRimborso');
 
-if (count($array_id_protocolli) === 0) {
-    sns_publish($conf_sns, 'INFO: array_id_protocolli vuoto (finito?)');
-    exit('INFO: array_id_protocolli vuoto (finito?)');
+if (count($array_richieste_rimborsi) === 0) {
+    sns_publish($conf_sns, 'INFO: array_richieste_rimborsi vuoto (finito?)');
+    exit('INFO: array_richieste_rimborsi vuoto (finito?)');
 }
 
 $pratiche_pdo = $pdo->query("
@@ -105,7 +106,7 @@ $pratiche_pdo = $pdo->query("
         Persona.codiceFiscale
     from " . $conf_query_documenti::$schema . ".Pratica
     join " . $conf_query_documenti::$schema . ".Persona on Persona.idPersona = Pratica.idPersonaSocio
-    where Pratica.numeroProtocollo in (" . implode(',', $array_id_protocolli) . ")
+    where Pratica.numeroProtocollo in (" . implode(',', $array_richieste_rimborsi) . ")
 ");
 
 echo PHP_EOL . 'record estratti staging pratiche: ' . $pratiche_pdo->rowCount();
@@ -114,11 +115,11 @@ foreach($protocolli_fetch as $protocollo_orig) {
 
     $trovato = false;
 
-    echo PHP_EOL . PHP_EOL . '--  IdProtocollo:' . $protocollo_orig['IdProtocollo'];
+    echo PHP_EOL . PHP_EOL . '--  IdProtocollo:' . $protocollo_orig['IdProtocollo'] . ' -- CodiceRichiestaRimborso ' . $protocollo_orig['CodiceRichiestaRimborso'];
 
     foreach ($pratiche_pdo as $pratica_dest) {
 
-        if ($pratica_dest['numeroProtocollo'] != $protocollo_orig['IdProtocollo']) {
+        if ($pratica_dest['numeroProtocollo'] != $protocollo_orig['CodiceRichiestaRimborso']) {
             continue; // vado al ciclo successivo
         }
 
@@ -240,7 +241,7 @@ foreach($protocolli_fetch as $protocollo_orig) {
     }
 
     if (!$trovato) {
-        echo PHP_EOL . '----  ERROR: Record in Pratiche non trovato ' . $protocollo_orig['IdProtocollo'];
+        echo PHP_EOL . '----  ERROR: Record in Pratiche non trovato ' . $protocollo_orig['CodiceRichiestaRimborso'];
         compila_riga_csv_KO("Record in Pratiche non trovato");
     }
 }
