@@ -123,7 +123,8 @@ foreach($protocolli_fetch as $protocollo_orig) {
             break;
         }
 
-        if ((string) $pratica_dest['numeroProtocollo'] !== (string) $protocollo_orig['CodiceRichiestaRimborso']) {
+        if (intval($pratica_dest['numeroProtocollo']) !== intval($protocollo_orig['CodiceRichiestaRimborso'])) {
+            echo PHP_EOL . '---- MISS ' . intval($pratica_dest['numeroProtocollo']) . ' != ' . intval($protocollo_orig['CodiceRichiestaRimborso']);
             continue; // vado al ciclo successivo
         }
 
