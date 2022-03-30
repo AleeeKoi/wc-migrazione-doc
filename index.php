@@ -214,7 +214,7 @@ foreach($protocolli_fetch as $protocollo_orig) {
                     tipoDocumento = 999,
                     modified = NOW(),
                     userId = 'MIGRAZIONEDOC1',
-                    migrated = 1";
+                    migrazione = 1";
 
             $pdo->prepare($update_doc)->execute([
                 $pratica_dest['idPratica'],
@@ -299,6 +299,6 @@ echo PHP_EOL;
 
 /**
  * query da eseguire:
- * ALTER TABLE Documenti ADD Migrazione TINYINT(1) DEFAULT 0 NOT NULL AFTER nomeFile;
- * CREATE INDEX Documenti_Migrazione_IDX USING BTREE ON Documenti (Migrazione);
+ * ALTER TABLE Documenti ADD migrazione TINYINT(1) DEFAULT 0 NOT NULL AFTER nomeFile;
+ * CREATE INDEX Documenti_migrazione_IDX USING BTREE ON Documenti (migrazione);
  */
