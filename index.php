@@ -59,6 +59,13 @@ $cipherOptions = [
     'KeySize' => 256,
 ];
 
+$fp = fopen(__DIR__ . DIRECTORY_SEPARATOR . 'lock', 'w');
+
+if (!flock($fp, LOCK_EX | LOCK_NB)) {
+    echo 'Unable to obtain lock';
+    exit(-1);
+}
+
 $faschim_protocolli_pdo = $pdo->query("
     select
         IdProtocollo,
@@ -95,7 +102,8 @@ $array_id_protocolli = array_column($protocolli_fetch, 'IdProtocollo');
 $array_richieste_rimborsi = array_column($protocolli_fetch, 'CodiceRichiestaRimborso');
 
 if (count($array_richieste_rimborsi) === 0) {
-    sns_publish($conf_sns, 'INFO: array_richieste_rimborsi vuoto (finito?)');
+    sns_publish($conf_sns, 'INFO: array_richieste_rimborsi vuoto (finito? Samuel stacca il cron...)');
+    fclose($fp);
     exit('INFO: array_richieste_rimborsi vuoto (finito?)');
 }
 
@@ -229,6 +237,13 @@ foreach($protocolli_fetch as $protocollo_orig) {
                 $file_name
             ]);
 
+            $update_protocollo = "
+                UPDATE " . $conf_query_protocolli::$schema . ".protocolli 
+                SET Importato = 1
+                WHERE IdProtocollo = ?";
+
+            $pdo->prepare($update_protocollo)->execute([$protocollo_orig['IdProtocollo']]);
+
             // compilo il csv ok
 
             $csv_ok_content .= PHP_EOL .
@@ -250,21 +265,6 @@ foreach($protocolli_fetch as $protocollo_orig) {
         echo PHP_EOL . '----  ERROR: Record in Pratiche non trovato ' . $protocollo_orig['CodiceRichiestaRimborso'];
         compila_riga_csv_KO("Record in Pratiche non trovato");
     }
-}
-
-try {
-    $in  = str_repeat('?,', count($array_id_protocolli) - 1) . '?';
-
-    $update_protocollo =  "
-    UPDATE " . $conf_query_protocolli::$schema . ".protocolli 
-    SET Importato = 1
-    WHERE IdProtocollo in ($in)";
-
-    $pdo->prepare($update_protocollo)->execute($array_id_protocolli);
-
-} catch (\Throwable $ex) {
-    echo_exception($ex);
-    sns_publish($conf_sns, $ex->getMessage());
 }
 
 if ($faschim_protocolli_pdo->rowCount()) {
@@ -301,6 +301,8 @@ if ($verbose) {
 echo PHP_EOL;
 echo PHP_EOL;
 echo PHP_EOL;
+
+fclose($fp);
 
 
 /**
