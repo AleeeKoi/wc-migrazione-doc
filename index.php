@@ -240,7 +240,8 @@ foreach($protocolli_fetch as $protocollo_orig) {
     }
 
     if (!$trovato) {
-        compila_riga_csv_KO("Record in Documenti non trovato");
+        echo PHP_EOL . '----  ERROR: Record in Pratiche non trovato ' . $protocollo_orig['IdProtocollo'];
+        compila_riga_csv_KO("Record in Pratiche non trovato");
     }
 }
 
