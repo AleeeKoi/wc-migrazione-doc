@@ -84,14 +84,14 @@ echo PHP_EOL . 'record estratti faschim protocolli: ' . $faschim_protocolli_pdo-
 
 $time = time();
 
-$csv_ok_content = '"idprotocollo";"NumeroProtocollo";"DataDocumento";"CodiceRichiestaRimborso";"CodOggetto";"savedPath";';
+$csv_ok_content = '"IdProtocollo";"NumeroProtocollo";"DataDocumento";"CodiceRichiestaRimborso";"CodOggetto";"savedPath";';
 $csv_ok_path = 'DocumentiTestImport/csv/ok_' . $time . '_' . $from . '_' . $to . '.csv';
 
-$csv_ko_content = '"idprotocollo";"NumeroProtocollo";"DataDocumento";"CodiceRichiestaRimborso";"CodOggetto";"error";';
+$csv_ko_content = '"IdProtocollo";"NumeroProtocollo";"DataDocumento";"CodiceRichiestaRimborso";"CodOggetto";"error";';
 $csv_ko_path = 'DocumentiTestImport/csv/ko_' . $time . '_' . $from . '_' . $to . '.csv';
 
 $protocolli_fetch = $faschim_protocolli_pdo->fetchAll();
-$array_id_protocolli = array_column($protocolli_fetch, 'idprotocollo');
+$array_id_protocolli = array_column($protocolli_fetch, 'IdProtocollo');
 
 if (count($array_id_protocolli) === 0) {
     sns_publish($conf_sns, 'INFO: array_id_protocolli vuoto (finito?)');
@@ -114,7 +114,7 @@ foreach($protocolli_fetch as $protocollo_orig) {
 
     $trovato = false;
 
-    echo PHP_EOL . PHP_EOL . '--  idprotocollo:' . $protocollo_orig['idprotocollo'];
+    echo PHP_EOL . PHP_EOL . '--  IdProtocollo:' . $protocollo_orig['IdProtocollo'];
 
     foreach ($pratiche_pdo as $pratica_dest) {
 
@@ -225,7 +225,7 @@ foreach($protocolli_fetch as $protocollo_orig) {
             // compilo il csv ok
 
             $csv_ok_content .= PHP_EOL .
-                '"' . $protocollo_orig['idprotocollo'] . '";' .
+                '"' . $protocollo_orig['IdProtocollo'] . '";' .
                 '"' . $protocollo_orig['NumeroProtocollo'] . '";' .
                 '"' . $protocollo_orig['DataDocumento'] . '";' .
                 '"' . $protocollo_orig['CodiceRichiestaRimborso'] . '";' .
@@ -250,7 +250,7 @@ try {
     $update_protocollo =  "
     UPDATE " . $conf_query_protocolli::$schema . ".protocolli 
     SET Importato = 1
-    WHERE idprotocollo in ($in)";
+    WHERE IdProtocollo in ($in)";
 
     $pdo->prepare($update_protocollo)->execute($array_id_protocolli);
 
