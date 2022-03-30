@@ -61,14 +61,15 @@ $cipherOptions = [
 
 $faschim_protocolli_pdo = $pdo->query("
     select
-        idprotocollo,
-        codmittente,
+        IdProtocollo,
         NumeroProtocollo,
         DataDocumento,
-        codicerichiestarimborso,
-        codfattura
+        CodiceRichiestaRimborso,
+        CodOggetto
     from " . $conf_query_protocolli::$schema . ".protocolli
     join " . $conf_query_protocolli::$schema . ".protocollirichieste on protocolli.IdProtocollo = protocollirichieste.CodiceProtocollo
+    join " . $conf_query_protocolli::$schema . ".oggetti on protocolli.CodOggetto = oggetti.IdOggetto
+    join " . $conf_query_protocolli::$schema . ".richiesterimborso on on protocollirichieste.CodiceRichiestaRimborso = richiesterimborso.IdRichiestaRimborsowhere
     where CodFattura is not null
       and dataDocumento >= '" . $from . "'
       and dataDocumento <= '" . $to . "'
@@ -83,83 +84,77 @@ echo PHP_EOL . 'record estratti faschim protocolli: ' . $faschim_protocolli_pdo-
 
 $time = time();
 
-$csv_ok_content = '"idprotocollo";"codmittente";"NumeroProtocollo";"DataDocumento";"codicerichiestarimborso";"codfattura";"savedPath";';
-
+$csv_ok_content = '"idprotocollo";"NumeroProtocollo";"DataDocumento";"CodiceRichiestaRimborso";"CodOggetto";"savedPath";';
 $csv_ok_path = 'DocumentiTestImport/csv/ok_' . $time . '_' . $from . '_' . $to . '.csv';
 
-$csv_ko_content = '"idprotocollo";"codmittente";"NumeroProtocollo";"DataDocumento";"codicerichiestarimborso";"codfattura";"error";';
-
+$csv_ko_content = '"idprotocollo";"NumeroProtocollo";"DataDocumento";"CodiceRichiestaRimborso";"CodOggetto";"error";';
 $csv_ko_path = 'DocumentiTestImport/csv/ko_' . $time . '_' . $from . '_' . $to . '.csv';
 
 $protocolli_fetch = $faschim_protocolli_pdo->fetchAll();
 $array_id_protocolli = array_column($protocolli_fetch, 'idprotocollo');
-$array_cod_fattura = array_column($protocolli_fetch, 'codfattura');
 
-if (count($array_cod_fattura) === 0) {
-    sns_publish($conf_sns, 'ERROR: array_cod_fattura vuoto');
-    exit('ERROR: array_cod_fattura vuoto');
+if (count($array_id_protocolli) === 0) {
+    sns_publish($conf_sns, 'INFO: array_id_protocolli vuoto (finito?)');
+    exit('INFO: array_id_protocolli vuoto (finito?)');
 }
 
-$staging_documenti_pdo = $pdo->query("
-        select
-            Documenti.idDocumento,
-            Documenti.idPratica,
-            Documenti.numeroDocumento,
-            Documenti.dataDocumento,
-            Documenti.pathDocumento,
-            Documenti.nomeFile,
-            Documenti.location,
-            Pratica.idPersonaSocio,
-            Pratica.numeroProtocollo,
-            Persona.codiceFiscale,    
-            Documenti.idFatturaOriginale
-        from " . $conf_query_documenti::$schema . ".Documenti
-        left join " . $conf_query_documenti::$schema . ".Pratica on Documenti.idPratica = Pratica.idPratica
-        left join " . $conf_query_documenti::$schema . ".Persona on Persona.idPersona = Pratica.idPersonaSocio
-        where Documenti.idFatturaOriginale in (" . implode(',', $array_cod_fattura) . ")"
-);
+$pratiche_pdo = $pdo->query("
+    select
+        Pratica.idPratica,
+        Pratica.numeroProtocollo,
+        Persona.codiceFiscale
+    from " . $conf_query_documenti::$schema . ".Pratica
+    join " . $conf_query_documenti::$schema . ".Persona on Persona.idPersona = Pratica.idPersonaSocio
+    where Pratica.numeroProtocollo in (" . implode(',', $array_id_protocolli) . ")
+");
 
-echo PHP_EOL . 'record estratti staging documenti: ' . $staging_documenti_pdo->rowCount();
+echo PHP_EOL . 'record estratti staging pratiche: ' . $pratiche_pdo->rowCount();
 
-foreach($protocolli_fetch as $row) {
+foreach($protocolli_fetch as $protocollo_orig) {
 
     $trovato = false;
 
-    echo PHP_EOL . PHP_EOL . '--  idprotocollo:' . $row['idprotocollo'] . ' - codfattura: ' . $row['codfattura'];
+    echo PHP_EOL . PHP_EOL . '--  idprotocollo:' . $protocollo_orig['idprotocollo'];
 
-    foreach ($staging_documenti_pdo as $doc) {
+    foreach ($pratiche_pdo as $pratica_dest) {
 
-        if ($doc['idFatturaOriginale'] != $row['codfattura']) {
+        if ($pratica_dest['numeroProtocollo'] != $protocollo_orig['IdProtocollo']) {
             continue; // vado al ciclo successivo
         }
 
         $trovato = true;
 
-        if ($doc['codiceFiscale'] === null && strlen($doc['codiceFiscale']) === 0) {
+        if ($pratica_dest['codiceFiscale'] === null && strlen($pratica_dest['codiceFiscale']) === 0) {
             if ($verbose) {
-                echo PHP_EOL . '----  ERROR: codice fiscale inesistente per l\'idDocumento ' . $doc['idDocumento'];
+                echo PHP_EOL . '----  ERROR: codice fiscale inesistente per protocollo ' . $pratica_dest['numeroProtocollo'];
             }
             compila_riga_csv_KO("codice fiscale inesistente");
             break;
         }
 
-        if ($doc['numeroProtocollo'] === null && strlen($doc['numeroProtocollo']) === 0) {
+        if ($pratica_dest['numeroProtocollo'] === null && strlen($pratica_dest['numeroProtocollo']) === 0) {
             if ($verbose) {
-                echo PHP_EOL . '----  ERROR: numero protocollo inesistente per l\'idDocumento ' . $doc['idDocumento'];
+                echo PHP_EOL . '----  ERROR: numero protocollo inesistente per protocollo ' . $pratica_dest['numeroProtocollo'];
             }
             compila_riga_csv_KO("numero protocollo inesistente");
             break;
         }
 
-        $parts = explode('-', $row['DataDocumento']);
+        $parts = explode('-', $protocollo_orig['DataDocumento']);
+        $anno = $parts[0] ?? null;
+        $mese = $parts[1] ?? null;
+        $giorno = $parts[2] ?? null;
 
-        $anno = $parts[0];
+        if (!$anno || !$mese || !$giorno) {
+            if ($verbose) {
+                echo PHP_EOL . '----  ERROR: formato data errato ' . $protocollo_orig['DataDocumento'];
+            }
+            compila_riga_csv_KO('formato data errato ' . $protocollo_orig['DataDocumento']);
+            break;
+        }
 
-        $mese = $parts[1];
-
-        $giorno = $parts[2];
-
-        $path_doc_origin = 'ProtocolloFaschim/Prestazioni/' . $anno . '/' . $mese . '/' . $giorno . '/' . $row['NumeroProtocollo'] . '.PDF';
+        $file_name = $protocollo_orig['NumeroProtocollo'] . '.PDF';
+        $path_doc_origin = 'ProtocolloFaschim/Prestazioni/' . $anno . '/' . $mese . '/' . $giorno . '/' . $file_name;
 
         if ($samba->has($path_doc_origin)) {
             if ($verbose) {
@@ -184,16 +179,13 @@ foreach($protocolli_fetch as $row) {
         $path_doc_dirs = [
             $conf_dir_destination::$root,
             'Persona',
-            $doc['codiceFiscale'],
+            $pratica_dest['codiceFiscale'],
             'Pratiche',
-            $doc['numeroProtocollo'],
+            $pratica_dest['numeroProtocollo'],
         ];
 
         $path_doc_dir = implode(DIRECTORY_SEPARATOR, $path_doc_dirs);
-
-        $name_doc = $row['NumeroProtocollo'] . '.PDF';
-
-        $path_doc_destination = $path_doc_dir . DIRECTORY_SEPARATOR . $name_doc;
+        $path_doc_destination = $path_doc_dir . DIRECTORY_SEPARATOR . $file_name;
 
         try {
             
@@ -212,25 +204,32 @@ foreach($protocolli_fetch as $row) {
             }
 
             $update_doc = "
-                UPDATE " . $conf_query_documenti::$schema . ".Documenti 
-                SET pathDocumento = ?,
-                    nomeFile = ?, 
+                INSERT " . $conf_query_documenti::$schema . ".Documenti 
+                SET idPratica = ?,
+                    tipoDocumentoId = ?,
+                    pathDocumento = ?,
+                    nomeFile = ?,
                     location = 'S3',
+                    tipoDocumento = 999,
                     modified = NOW(),
-                    userId = 'MIGRAZIONE9'
-                WHERE idDocumento = ?";
+                    userId = 'MIGRAZIONEDOC1',
+                    migrated = 1";
 
-            $pdo->prepare($update_doc)->execute([$path_doc_dir, $name_doc, $doc['idDocumento']]);
+            $pdo->prepare($update_doc)->execute([
+                $pratica_dest['idPratica'],
+                intval($protocollo_orig['CodOggetto']) + 1000,
+                $path_doc_dir,
+                $file_name
+            ]);
 
             // compilo il csv ok
 
             $csv_ok_content .= PHP_EOL .
-                '"' . $row['idprotocollo'] . '";' .
-                '"' . $row['codmittente'] . '";' .
-                '"' . $row['NumeroProtocollo'] . '";' .
-                '"' . $row['DataDocumento'] . '";' .
-                '"' . $row['codicerichiestarimborso'] . '";' .
-                '"' . $row['codfattura'] . '";' .
+                '"' . $protocollo_orig['idprotocollo'] . '";' .
+                '"' . $protocollo_orig['NumeroProtocollo'] . '";' .
+                '"' . $protocollo_orig['DataDocumento'] . '";' .
+                '"' . $protocollo_orig['CodiceRichiestaRimborso'] . '";' .
+                '"' . $protocollo_orig['CodOggetto'] . '";' .
                 '"' . $result->get('ObjectURL') . '"';
 
         } catch (\Throwable $ex) {
@@ -294,3 +293,10 @@ if ($verbose) {
 echo PHP_EOL;
 echo PHP_EOL;
 echo PHP_EOL;
+
+
+/**
+ * query da eseguire:
+ * ALTER TABLE Documenti ADD Migrazione TINYINT(1) DEFAULT 0 NOT NULL AFTER nomeFile;
+ * CREATE INDEX Documenti_Migrazione_IDX USING BTREE ON Documenti (Migrazione);
+ */
