@@ -3,6 +3,7 @@
 $st = time();
 
 set_time_limit(0);
+ini_set('memory_limit', '1500M');
 
 require('vendor/autoload.php');
 require('./config.php');
