@@ -234,7 +234,8 @@ foreach($protocolli_fetch as $protocollo_orig) {
                     tipoDocumento = 999,
                     modified = NOW(),
                     userId = 'MIGRAZIONEDOC1',
-                    migrazione = 1";
+                    migrazione = 1,
+                    statoDocumento= 'Valido'";
 
             $pdo->prepare($update_doc)->execute([
                 $pratica_dest['idPratica'],
